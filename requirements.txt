@@ -1,0 +1,10 @@
+python-dotenv
+requests
+colorama
+aiohttp
+setuptools
+selenium
+aiofiles
+PyQt5
+
+discord.py-self[voice,speed] @ git+https://github.com/GenerelSchwerz/discord.py-self.git@proxy_support_static

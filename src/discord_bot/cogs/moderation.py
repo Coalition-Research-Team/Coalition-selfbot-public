@@ -5,7 +5,7 @@ import colorama
 from datetime import timedelta
 import discord
 from typing import Union
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from src.discord_bot import CoalitionBot
 
@@ -42,12 +42,18 @@ class Moderation(commands.Cog):
         await ctx.send(f"Purged {amount} messages.")
     
     @commands.command(aliases=['targetpurge'])
-    async def target_purge(self, ctx: commands.Context, user: discord.User):
+    async def target_purge(self, ctx: commands.Context, user: Optional[discord.User] = None, amount: Optional[int|float] = None):
         '''
         Deletes all the messages of a specific user.
         '''
+        if user is None:
+            user = ctx.author
+
+        if amount is None:
+            amount = float('inf')
+
         try:
-            for message in await ctx.channel.history(limit=float('inf')).flatten():
+            async for message in ctx.channel.history(limit=amount):
                 if message.author.id == user.id:
                     await message.delete()
         except discord.errors.HTTPException:

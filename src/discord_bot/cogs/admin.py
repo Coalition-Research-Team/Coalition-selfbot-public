@@ -111,10 +111,12 @@ class Admin(commands.Cog):
         # Strip code block markers (```bash and ```)
         if script.startswith("```bash") and script.endswith("```"):
             script = script[7:-3].strip()  # Remove ```bash from the start and ``` from the end
+        elif script.startswith("```sh") and script.endswith("```"):
+            script = script[5:-3].strip()
 
         try:
             # Execute the script in a separate thread
-            stdout, stderr, process = await self.run_bash_in_thread(script)
+            stdout, stderr, process = await self.run_bash(script)
 
             # If there's output, send it back
             if stdout:

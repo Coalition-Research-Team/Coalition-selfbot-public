@@ -136,10 +136,9 @@ class Admin(commands.Cog):
             return f'**{"SUCCESS" if success else "FAILURE"}**: {script}'
         
         # Strip code block markers (```bash and ```)
-        if script.startswith("```bash") and script.endswith("```"):
-            script = script[7:-3].strip()
-        elif script.startswith("```sh") and script.endswith("```"):
-            script = script[5:-3].strip()
+        if script.startswith("```") and script.endswith("```"):
+            first = script.find("\n")
+            script = script[first:-3].strip()
 
         try:
             # Create placeholders for stdout and stderr messages

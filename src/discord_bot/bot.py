@@ -44,7 +44,7 @@ class CoalitionBot(commands.Bot, Construction):
         print(f"Bot logged in as {self.user}")
     
     async def on_command_error(self, ctx: commands.Context, error):
-        await ctx.reply(f'Command "{ctx.command.name} failed, forwarding error...')
+        await ctx.reply(f'Command "{ctx.command.name if ctx.command is not None else None} failed, forwarding error...')
         await ctx.send(f'Type: {type(error)} | Description: `{error}`')
         await super().on_command_error(ctx, error)
     

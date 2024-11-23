@@ -18,6 +18,7 @@ class Utility(commands.Cog):
 
     def __init__(self, bot: 'CoalitionBot'):
         self.bot = bot
+        self.anti_tox_toggle = False
 
     @commands.command(aliases=["latency"])
     async def ping(self, ctx: commands.Context) -> None:
@@ -409,7 +410,21 @@ Part of Token: {str(base64.b64encode(f"{user.id}".encode("utf-8")), "utf-8").rep
             await ctx.message.edit("Edit timed out. Rejecting edit.")
             return
 
+    @commands.command(name="anti_tox")
+    async def _anti_tox(self, ctx: commands.Context):
+        """Sets a toggle to delete any newly sent messages in 60 seconds"""
+        self.anti_tox_toggle = not(self.anti_tox_toggle)
+        await ctx.message.edit(f"Sent Anti Tox Toggle to {self.anti_tox_toggle}")
 
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if self.anti_tox_toggle:
+            if message.author == self.bot.user:
+                await asyncio.sleep(60)
+                await message.delete()
+
+            
 async def setup(bot: commands.Bot) -> None:
     """
     Adds the Utility cog to the bot.

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+from asyncio.subprocess import Process
 import subprocess
 from discord.ext import commands
 import traceback
 import textwrap
 import io
 import contextlib
+import asyncio
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 if TYPE_CHECKING:
     from src.discord_bot import CoalitionBot
 
@@ -14,10 +16,9 @@ class Admin(commands.Cog):
     
     def __init__(self, bot: 'CoalitionBot'):
         self.bot = bot
-        self.running_processes = []  # Track running Bash processes
+        self.running_processes = [] 
 
     @commands.command(name="pyeval", aliases=["pyev", "python", "py"])
-    # @commands.is_owner()  # Ensures only the bot owner can run this command
     async def eval_fn(self, ctx: commands.Context, *, code: str) -> None:
         
         def fmt_org(code: str, success=True) -> str:
@@ -80,20 +81,21 @@ class Admin(commands.Cog):
             await ctx.message.edit(fmt_org(code))
             await ctx.send(f'```py\n{output}{result[:1990]}\n```')
 
-    async def run_bash_in_thread(self, script: str) -> subprocess.CompletedProcess:
+    async def run_bash(self, script: str) -> Tuple[str, str, Process]:
         """
-        Offloads the execution of the Bash script to the thread pool to avoid blocking the main thread.
+        Executes the Bash script asynchronously without blocking the main thread.
         """
-        def run_script():
-            # Use subprocess to run the script in the shell
-            process = subprocess.Popen(script, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            self.running_processes.append(process)  # Track the running process
+        process = await asyncio.create_subprocess_shell(
+            script,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        
+        stdout, stderr = await process.communicate()
+        
+        self.running_processes.append(process)
 
-            stdout, stderr = process.communicate()
-            return stdout, stderr, process
-
-        # Offload the process to the threadpool using bot's threadpool (self.bot.threadpool)
-        return await self.bot.loop.run_in_executor(self.bot.threadpool, run_script)
+        return stdout.decode(), stderr.decode(), process
 
     @commands.command(name="bash", aliases=['b', 'sh'])
     async def bash(self, ctx: commands.Context, *, script: str) -> None:
@@ -146,8 +148,9 @@ class Admin(commands.Cog):
 
         # Terminate all running processes
         for process in self.running_processes:
-            if process.poll() is None:  # Check if the process is still running
-                process.terminate()  # Terminate the process
+            if process.returncode is None:  # Check if the process is still running
+                process.terminate()
+                await process.wait()
 
         self.running_processes.clear()  # Clear the list of processes
         await ctx.message.edit("All running Bash scripts have been halted.")
